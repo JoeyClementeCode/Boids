@@ -27,11 +27,10 @@ public class Boid : MonoBehaviour
     [SerializeField] private float cohesionWeight;
     [SerializeField] private float seperationWeight;
     [SerializeField] private float alignmentWeight;
-    [SerializeField] private float racismWeight;
-    [SerializeField] private bool cohesionOn;
-    [SerializeField] private bool seperationOn;
-    [SerializeField] private bool alignmentOn;
-    [SerializeField] private bool racismOn;
+    [NonSerialized] public bool cohesionOn;
+    [NonSerialized] public bool seperationOn;
+    [NonSerialized] public bool alignmentOn;
+    [NonSerialized] public bool racismOn;
     public int flockID;
     
     private void Start()
@@ -58,8 +57,8 @@ public class Boid : MonoBehaviour
     private void PopulateLists()
     {
         Vector3 pos = transform.position;
-        maxDistanceObjects = boidManager.FindGameObjectsInRange(maxDistance, pos, gameObject, racismOn);
-        minDistanceObjects = boidManager.FindGameObjectsInRange(minDistance, pos, gameObject, racismOn);
+        maxDistanceObjects = boidManager.FindGameObjectsInRange(maxDistance, pos, gameObject);
+        minDistanceObjects = boidManager.FindGameObjectsInRange(minDistance, pos, gameObject);
     }
 
     private Vector2 Cohesion()
