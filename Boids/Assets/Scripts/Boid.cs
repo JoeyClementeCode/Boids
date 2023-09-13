@@ -18,21 +18,22 @@ public class Boid : MonoBehaviour
     [SerializeField] private float maxDistance;
     private List<GameObject> minDistanceObjects = new List<GameObject>();
     private List<GameObject> maxDistanceObjects = new List<GameObject>();
-    [SerializeField] private Vector2 newVelocity = Vector2.zero;
-    [SerializeField] private Vector2 edgeVelocity = Vector2.zero;
+    private Vector2 newVelocity = Vector2.zero;
+    private Vector2 edgeVelocity = Vector2.zero;
+    private bool inBounds;
 
     [Space(2)]
     [Header("Algorithms and Weights")]
     [SerializeField] private float cohesionWeight;
     [SerializeField] private float seperationWeight;
     [SerializeField] private float alignmentWeight;
+    [SerializeField] private float racismWeight;
     [SerializeField] private bool cohesionOn;
     [SerializeField] private bool seperationOn;
     [SerializeField] private bool alignmentOn;
-
-
-    private bool _inBounds;
-
+    [SerializeField] private bool racismOn;
+    public int flockID;
+    
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -57,8 +58,8 @@ public class Boid : MonoBehaviour
     private void PopulateLists()
     {
         Vector3 pos = transform.position;
-        maxDistanceObjects = boidManager.FindGameObjectsInRange(maxDistance, pos, gameObject);
-        minDistanceObjects = boidManager.FindGameObjectsInRange(minDistance, pos, gameObject);
+        maxDistanceObjects = boidManager.FindGameObjectsInRange(maxDistance, pos, gameObject, racismOn);
+        minDistanceObjects = boidManager.FindGameObjectsInRange(minDistance, pos, gameObject, racismOn);
     }
 
     private Vector2 Cohesion()
@@ -67,7 +68,11 @@ public class Boid : MonoBehaviour
 
         if (maxDistanceObjects.Count > 0)
         {
-            centerMass = maxDistanceObjects.Aggregate(centerMass, (current, boid) => current + boid.transform.position);
+            foreach (GameObject boid in maxDistanceObjects)
+            {
+                centerMass += boid.transform.position;
+            }
+            
             centerMass /= maxDistanceObjects.Count;
             Vector2 direction = centerMass - transform.position;
 
@@ -82,8 +87,11 @@ public class Boid : MonoBehaviour
         Vector3 seperationForce = Vector3.zero;
         if (minDistanceObjects.Count > 0)
         {
-            seperationForce = minDistanceObjects.Select(boid => transform.position - boid.transform.position)
-                .Aggregate(seperationForce, (current, vector) => current + vector / vector.sqrMagnitude);
+            foreach (GameObject boid in minDistanceObjects)
+            {
+                Vector3 distance = transform.position - boid.transform.position;
+                seperationForce += distance;
+            }
         }
 
         return seperationForce;
@@ -94,7 +102,7 @@ public class Boid : MonoBehaviour
         Vector2 average = Vector2.zero;
         if (minDistanceObjects.Count > 0)
         {
-            foreach (var boid in maxDistanceObjects)
+            foreach (GameObject boid in maxDistanceObjects)
             {
                 average += boid.GetComponent<Rigidbody2D>().velocity;
             }
@@ -104,94 +112,92 @@ public class Boid : MonoBehaviour
 
         return average;
     }
-
+    
     private void CalculateVelocity(Vector3 cohesion, Vector3 separation, Vector3 alignment)
-    {
-        newVelocity = cohesion * cohesionWeight + separation * seperationWeight + alignment * alignmentWeight;
-    }
-
-    private void StayInBounds()
-    {
-        var pos = transform.position;
-        _inBounds = true;
-
-        if (pos.x > screenSize.x / 2)
         {
-            edgeVelocity += Vector2.left * (edgeForce * Time.deltaTime);
-            _inBounds = false;
+            newVelocity = cohesion * cohesionWeight + separation * seperationWeight + alignment * alignmentWeight;
         }
 
-        if (pos.x < screenSize.x / 2 * -1)
+        private void StayInBounds()
         {
-            edgeVelocity += Vector2.right * (edgeForce * Time.deltaTime);
-            _inBounds = false;
-        }
+            var pos = transform.position;
+            inBounds = true;
 
-        if (pos.y > screenSize.y / 2)
-        {
-            edgeVelocity += Vector2.down * (edgeForce * Time.deltaTime);
-            _inBounds = false;
-        }
-
-        if (pos.y < screenSize.y / 2 * -1)
-        {
-            edgeVelocity += Vector2.up * (edgeForce * Time.deltaTime);
-            _inBounds = false;
-        }
-
-    }
-
-    private void FixedUpdate()
-    {
-        Vector2 currVel = rb.velocity;
-
-        rb.velocity += edgeVelocity + newVelocity * Time.deltaTime;
-
-        Vector2 normVel = currVel.normalized;
-
-        transform.up = normVel;
-
-        /*if (_rb.velocity.sqrMagnitude < _speed*_speed)
-        {
-            //_rb.velocity += (Vector2)transform.up * (_speed * Time.deltaTime);
-        }*/
-
-        if (rb.velocity.sqrMagnitude > maxSpeed * maxSpeed)
-        {
-            rb.velocity = normVel * (maxSpeed * Time.deltaTime);
-        }
-
-        if (_inBounds)
-        {
-            edgeVelocity *= .95f;
-            if (edgeVelocity.sqrMagnitude is > -0.4f and < 0.4f)
+            if (pos.x > screenSize.x / 2)
             {
-                edgeVelocity = Vector2.zero;
+                edgeVelocity += Vector2.left * (edgeForce * Time.deltaTime);
+                inBounds = false;
             }
+
+            if (pos.x < screenSize.x / 2 * -1)
+            {
+                edgeVelocity += Vector2.right * (edgeForce * Time.deltaTime);
+                inBounds = false;
+            }
+
+            if (pos.y > screenSize.y / 2)
+            {
+                edgeVelocity += Vector2.down * (edgeForce * Time.deltaTime);
+                inBounds = false;
+            }
+
+            if (pos.y < screenSize.y / 2 * -1)
+            {
+                edgeVelocity += Vector2.up * (edgeForce * Time.deltaTime);
+                inBounds = false;
+            }
+
         }
 
-    }
+        private void FixedUpdate()
+        {
+            rb.velocity += edgeVelocity + newVelocity * Time.deltaTime;
+        
+            Vector2 currVel = rb.velocity;
+            Vector2 normVel = currVel.normalized;
+            transform.up = normVel;
 
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, minDistance);
-        Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, maxDistance);
+            if (rb.velocity.sqrMagnitude < speed * speed)
+            {
+                rb.velocity = (Vector2)transform.up * (speed * Time.deltaTime);
+            }
+        
+            if (rb.velocity.sqrMagnitude > maxSpeed * maxSpeed)
+            {
+                rb.velocity = normVel * (maxSpeed * Time.deltaTime);
+            }
 
-        Gizmos.color = Color.red;
-        Gizmos.DrawRay(transform.position, edgeVelocity);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawRay(transform.position, newVelocity);
+            if (inBounds)
+            {
+                edgeVelocity *= .95f;
+                if (edgeVelocity.sqrMagnitude is > -0.4f and < 0.4f)
+                {
+                    edgeVelocity = Vector2.zero;
+                }
+            }
 
-    }
+        }
 
-    private void OnDrawGizmos()
-    {
-        /*Gizmos.color = Color.red;
-        Gizmos.DrawRay(transform.position, _edgeVelocity);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawRay(transform.position, _newVelocity);*/
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, minDistance);
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(transform.position, maxDistance);
 
-    }
+            Gizmos.color = Color.red;
+            Gizmos.DrawRay(transform.position, edgeVelocity);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(transform.position, newVelocity);
+
+        }
+
+        private void OnDrawGizmos()
+        {
+            /*Gizmos.color = Color.red;
+            Gizmos.DrawRay(transform.position, _edgeVelocity);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawRay(transform.position, _newVelocity);*/
+
+        }
 }

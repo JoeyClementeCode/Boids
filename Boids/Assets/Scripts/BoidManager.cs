@@ -12,6 +12,7 @@ public class BoidManager : MonoBehaviour
     [SerializeField] private int numBoids;
     [SerializeField] private GameObject boid;
     private List<GameObject> totalBoids = new List<GameObject>();
+    public List<Color> races;
 
     private void Start()
     {
@@ -25,20 +26,31 @@ public class BoidManager : MonoBehaviour
             Vector3 randLocation = new Vector3(Random.Range(-1 * screenSize.x / 2, screenSize.x / 2), Random.Range(-1 * screenSize.y / 2, screenSize.y / 2), 0);
             Quaternion randRotation = Quaternion.Euler(0f, 0f, Random.Range(0, 359));
             GameObject newBoid = Instantiate(this.boid, randLocation, randRotation);
+            int randomNum = Random.Range(0, races.Count - 1);
             newBoid.GetComponent<Boid>().screenSize = screenSize;
             newBoid.GetComponent<Boid>().boidManager = this;
+            newBoid.GetComponent<Boid>().flockID = randomNum;
+            newBoid.GetComponent<SpriteRenderer>().color = races[randomNum];
             newBoid.GetComponent<Rigidbody2D>().velocity = newBoid.transform.up;
-            newBoid.GetComponent<SpriteRenderer>().color = Random.ColorHSV();
+
             totalBoids.Add(newBoid);
         }
     }
 
-    public List<GameObject> FindGameObjectsInRange(float radius, Vector3 boidLocation, GameObject requestingBoid)
+    public List<GameObject> FindGameObjectsInRange(float radius, Vector3 boidLocation, GameObject requestingBoid, bool racismOn)
     {
         List<GameObject> tempBoid = new List<GameObject>();
         foreach (var boid in totalBoids)
         {
-            if ((boid != requestingBoid ) && (boidLocation - boid.transform.position).sqrMagnitude <= radius * radius)
+            if (racismOn && boid.GetComponent<Boid>().flockID == requestingBoid.GetComponent<Boid>().flockID)
+            {
+                if ((boid != requestingBoid ) && (boidLocation - boid.transform.position).sqrMagnitude <= radius * radius)
+                {
+                    tempBoid.Add(boid);
+                }
+            }
+
+            if (!racismOn && (boid != requestingBoid ) && (boidLocation - boid.transform.position).sqrMagnitude <= radius * radius)
             {
                 tempBoid.Add(boid);
             }
