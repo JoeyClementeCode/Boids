@@ -126,20 +126,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ac06f724f8fc374b80e3fae8d5b8ae7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 50
-  maxSpeed: 80
-  edgeForce: 8
+  speed: 60
+  maxSpeed: 90
+  edgeForce: 10
   minDistance: 0.3
-  maxDistance: 0.5
-  cohesionWeight: 15
-  seperationWeight: 50
-  alignmentWeight: 35
-  racismWeight: 15
-  cohesionOn: 1
-  seperationOn: 1
-  alignmentOn: 1
-  racismOn: 1
-  currentRace: {r: 0, g: 0, b: 0, a: 0}
+  maxDistance: 0.6
+  cohesionWeight: 20
+  seperationWeight: 80
+  alignmentWeight: 50
   flockID: 0
 --- !u!60 &-8300652364513581951
 PolygonCollider2D:

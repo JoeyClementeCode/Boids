@@ -169,7 +169,7 @@ public class Boid : MonoBehaviour
             if (inBounds)
             {
                 edgeVelocity *= .95f;
-                if (edgeVelocity.sqrMagnitude is > -0.4f and < 0.4f)
+                if (edgeVelocity.sqrMagnitude is > -.4f and < .4f)
                 {
                     edgeVelocity = Vector2.zero;
                 }
