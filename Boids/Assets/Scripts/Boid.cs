@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class Boid : MonoBehaviour
 {
@@ -20,7 +21,9 @@ public class Boid : MonoBehaviour
     private List<GameObject> maxDistanceObjects = new List<GameObject>();
     private Vector2 newVelocity = Vector2.zero;
     private Vector2 edgeVelocity = Vector2.zero;
+    private Vector2 randomVelocity = Vector2.zero;
     private bool inBounds;
+    private bool moveRandomly = false;
 
     [Space(2)]
     [Header("Algorithms and Weights")]
@@ -36,6 +39,7 @@ public class Boid : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        InvokeRepeating("RandomMovement", 2.0f, 10.0f);
     }
 
     private void Update()
@@ -148,11 +152,32 @@ public class Boid : MonoBehaviour
 
         }
 
+        private void RandomMovement()
+        {
+            StartCoroutine(RandomMove());
+        }
+
+        private IEnumerator RandomMove()
+        {
+            randomVelocity = new Vector2(Random.Range(-0.5f, 0.5f), Random.Range(-0.5f, 0.5f));
+            Debug.Log(randomVelocity);
+            moveRandomly = true;
+            yield return new WaitForSeconds(0.2f);
+            moveRandomly = false;
+        }
+        
+        
         private void FixedUpdate()
         {
             rb.velocity += edgeVelocity + newVelocity * Time.deltaTime;
-        
+
             Vector2 currVel = rb.velocity;
+            if (moveRandomly)
+                currVel = rb.velocity + randomVelocity;
+            else
+            {
+                currVel = rb.velocity;
+            }
             Vector2 normVel = currVel.normalized;
             transform.up = normVel;
 
